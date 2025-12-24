@@ -12,3 +12,6 @@ wheels/
 
 # PPT-related files
 *.pptx
+
+# Data files
+data/
