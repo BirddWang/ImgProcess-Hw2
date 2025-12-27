@@ -31,17 +31,28 @@ class ModelDemoApp(QMainWindow):
 
         # Load pretrained weights
         try:
-            weights_path = Path(__file__).parent / 'model' / 'Weight_Sigmoid.pth'
+            weights_path = Path(__file__).parent / 'model' / 'Weight_Relu.pth'
             self.model.load_state_dict(torch.load(weights_path, map_location=self.device))
             self.model.eval()
+            print(f"Model loaded from {weights_path}")
         except Exception as e:
             print(f"Warning: Could not load model weights: {e}")
+            print("Attempting to load from alternative paths...")
 
-        # Image preprocessing pipeline
+        # Image preprocessing pipeline with better handling for hand-written digits
         self.transform = transforms.Compose([
+            # First convert RGBA to RGB if needed
+            transforms.Lambda(lambda img: img.convert('RGB') if img.mode == 'RGBA' else img),
+            # Convert to grayscale
             transforms.Grayscale(num_output_channels=1),
+            # Resize to 32x32 (LeNet5 expects this)
             transforms.Resize((32, 32)),
+            # Convert to tensor
             transforms.ToTensor(),
+            # Invert colors if needed (for hand-written images where black is foreground)
+            # This helps match MNIST training data where digits are darker
+            transforms.Lambda(lambda x: 1.0 - x if x.mean() > 0.5 else x),
+            # Normalize with MNIST statistics
             transforms.Normalize((0.1307,), (0.3081,))
         ])
 
@@ -199,6 +210,9 @@ class ModelDemoApp(QMainWindow):
             return
 
         try:
+            # Ensure model is in evaluation mode (disables Dropout and BatchNorm)
+            self.model.eval()
+
             # Preprocess image
             input_tensor = self.transform(self.loaded_image).unsqueeze(0).to(self.device)
 

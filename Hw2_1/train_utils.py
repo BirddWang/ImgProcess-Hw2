@@ -3,22 +3,33 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
 def load_data(batch_size=64):
-    transform = transforms.Compose([
+    # Training transforms with augmentation
+    train_transform = transforms.Compose([
         transforms.ToTensor(),
         # Resize to 32x32 as LeNet-5 expects this input size
         transforms.Resize((32, 32)),
-        # Why normalization?
+        # Data augmentation for training
+        transforms.RandomRotation(10),  # Random rotation up to 10 degrees
+        transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),  # Random translation
         # Normalization helps in speeding up convergence during training
         transforms.Normalize((0.1307,), (0.3081,))
     ])
-    train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
-    test_dataset = datasets.MNIST('./data', train=False, download=True, transform=transform)
+
+    # Test transforms without augmentation
+    test_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Resize((32, 32)),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+
+    train_dataset = datasets.MNIST('./data', train=True, download=True, transform=train_transform)
+    test_dataset = datasets.MNIST('./data', train=False, download=True, transform=test_transform)
     print("size of train dataset:", len(train_dataset))
     print("size of test dataset:", len(test_dataset))
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-    
+
     return train_loader, test_loader
 
 def draw_curve(train_loss_list, train_accuracy_list,
