@@ -25,8 +25,14 @@ class ModelDemoApp(QMainWindow):
         self.setWindowTitle("ResNet18 Model Demo")
         self.setGeometry(100, 100, 1200, 700)
 
-        # Initialize model
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # Initialize model with device detection (MPS support for Apple Silicon)
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            self.device = torch.device("mps")
+        else:
+            self.device = torch.device("cpu")
+
         self.model = ResNet18().to(self.device)
 
         # Load pretrained weights
@@ -170,7 +176,10 @@ class ModelDemoApp(QMainWindow):
             ax.axis('off')
 
             # Capture the summary as a string
+            curr_device = self.device
+            self.model.to('cpu')  # Move model to CPU for summary
             summary_str = self._get_model_summary()
+            self.model.to(curr_device)  # Move model back to original device
 
             ax.text(0.05, 0.95, summary_str, transform=ax.transAxes,
                    fontfamily='monospace', fontsize=9, verticalalignment='top',

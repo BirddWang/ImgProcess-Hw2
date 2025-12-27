@@ -121,7 +121,19 @@ def arg_parse():
 def main():
     args = arg_parse()
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # Device detection with MPS support for Apple Silicon
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        device_name = "CUDA"
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+        device_name = "Apple Metal Performance Shaders (MPS)"
+    else:
+        device = torch.device("cpu")
+        device_name = "CPU"
+
+    print(f"Using device: {device_name}")
+
     train_loader, test_loader = load_data(args.batch_size)
 
     model = LeNet5(activation_type=args.activation).to(device)
