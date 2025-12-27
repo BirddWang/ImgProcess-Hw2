@@ -3,19 +3,33 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
 def load_data(batch_size=64):
-    transform = transforms.Compose([
+    # Training transforms with strong augmentation for CIFAR-10
+    train_transform = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-        transforms.Resize((32, 32))
+        transforms.Resize((32, 32)),
+        # Data augmentation
+        transforms.RandomCrop(32, padding=4),  # Random crop with padding
+        transforms.RandomHorizontalFlip(p=0.5),  # Random horizontal flip
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),  # Color jittering
+        # Normalization
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
     ])
-    train_dataset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
-    test_dataset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
+
+    # Test transforms without augmentation
+    test_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Resize((32, 32)),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+    ])
+
+    train_dataset = datasets.CIFAR10(root='./data', train=True, download=True, transform=train_transform)
+    test_dataset = datasets.CIFAR10(root='./data', train=False, download=True, transform=test_transform)
     print("size of train dataset:", len(train_dataset))
     print("size of test dataset:", len(test_dataset))
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-    
+
     return train_loader, test_loader
 
 def draw_curve(train_loss_list, train_accuracy_list,
